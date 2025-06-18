@@ -1,5 +1,5 @@
+// netlify/functions/collect.js
 import crypto from "crypto";
-import fetch from "node-fetch";
 
 export async function handler(event) {
   // 1) data 파라미터 하나로 읽어오기 (URL-encoded JSON)
@@ -17,13 +17,10 @@ export async function handler(event) {
   }
 
   // 3) client_id가 비어 있으면 생성 (고유 사용자 식별)
-  const effectiveClientId = payload.client_id || crypto.randomUUID();
-  payload.client_id = effectiveClientId;
+  payload.client_id = payload.client_id || crypto.randomUUID();
 
   // 4) session_id가 비어 있으면 생성 (세션 식별)
-  if (!payload.session_id) {
-    payload.session_id = crypto.randomUUID();
-  }
+  payload.session_id = payload.session_id || crypto.randomUUID();
 
   // 5) GA4 Measurement Protocol collect 엔드포인트 (한 줄, 공백·줄바꿈 금지)
   const url =
@@ -40,11 +37,12 @@ export async function handler(event) {
       body: JSON.stringify(payload),
     });
     status = resp.status;
-  } catch (err) {
-    console.error("Error sending to GA4 MP:", err);
-    status = 502;
+  } catch (e) {
+    console.error("Error sending to GA4 MP:", e);
+    // GA 전송 중 에러라면 502 로 응답
+    return { statusCode: 502, body: "Bad Gateway" };
   }
 
-  // 7) Netlify 함수는 상태 코드 그대로 반환
+  // 7) Netlify 함수는 GA의 상태 코드를 그대로 반환
   return { statusCode: status };
 }
