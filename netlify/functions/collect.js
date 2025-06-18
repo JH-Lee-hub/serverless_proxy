@@ -1,8 +1,10 @@
 // netlify/functions/collect.js
+
 export async function handler(event) {
   const clientId = event.queryStringParameters.client_id;
+  const effectiveClientId = clientId || crypto.randomUUID();
   const payload = {
-    client_id: clientId || crypto.randomUUID(),
+    client_id: effectiveClientId,
     events: [{ name: "page_view" }]
   };
   await fetch(
