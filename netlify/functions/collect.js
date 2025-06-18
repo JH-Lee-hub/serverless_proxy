@@ -1,3 +1,4 @@
+// netlify/functions/collect.js
 import crypto from "crypto";
 
 export async function handler(event) {
@@ -24,19 +25,22 @@ export async function handler(event) {
     payload.session_id = crypto.randomUUID();
   }
 
-  // 5) GA4 MP collect 엔드포인트 (공백·줄바꿈 금지)
+  // 5) GA4 MP collect 엔드포인트 (한 줄, 공백·줄바꿈 금지)
   const endpoint =
     "https://www.google-analytics.com/mp/collect" +
     "?measurement_id=G-LKLBT4Z5XG" +
     "&api_secret=6wzs8wmxRtKdQznxUvY4Fg";
 
-  // 6) POST 요청으로 payload 전송 (Netlify 함수 환경에서 글로벌 fetch 사용)
+  // 6) POST 요청으로 payload 전송 (Netlify 환경의 global fetch 사용)
   const resp = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  // 7) 원격 요청 성공 여부에 따라 204 또는 오류 반환
-  return { statusCode: resp.ok ? 204 : resp.status };
+  // 7) 요청 성공 여부에 따라 204 또는 에러 코드 반환
+  return {
+    statusCode: resp.ok ? 204 : resp.status,
+    body: resp.ok ? "" : await resp.text(),
+  };
 }
