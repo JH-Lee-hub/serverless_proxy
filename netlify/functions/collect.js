@@ -8,7 +8,7 @@ export async function handler(event) {
     events: [{ name: "page_view" }]
   };
   await fetch(
-    `https://www.google-analytics.com/mp/collect?measurement_id=G-LKLBT4Z5XG&api_secret=6wzs8wmxRtKdQznxUvY4Fg`,
+    `https://www.google-analytics.com/mp/debug/collect?measurement_id=G-LKLBT4Z5XG&api_secret=6wzs8wmxRtKdQznxUvY4Fg`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
