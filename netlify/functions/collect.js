@@ -16,20 +16,22 @@ export async function handler(event) {
   }
 
   // 3) client_id가 비어 있으면 생성
-  const effectiveClientId =
-    payload.client_id || crypto.randomUUID();
+  const effectiveClientId = payload.client_id || crypto.randomUUID();
   payload.client_id = effectiveClientId;
 
-  // 4) MP 호출
-  await fetch(
-    `https://www.google-analytics.com/mp/collect?measurement_id=G-LKLB T4Z5XG&api_secret=6wzs8wmxRtKdQznxUvY4Fg`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    }
-  );
+  // 4) MP collect용 올바른 URL (한 줄, 공백·줄바꿈 금지)
+  const url =
+    "https://www.google-analytics.com/mp/collect" +
+    "?measurement_id=G-LKLBT4Z5XG" +
+    "&api_secret=6wzs8wmxRtKdQznxUvY4Fg";
 
-  // 5) 204로 응답
-  return { statusCode: 204 };
+  // 5) 이 url 변수를 실제로 사용
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  // 6) Netlify 함수는 204를 반환
+  return { statusCode: resp.status };
 }
