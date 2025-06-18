@@ -1,13 +1,13 @@
 import crypto from "crypto";
 
 export async function handler(event) {
-  // 1) data 파라미터 하나로 읽어오기
-  const raw = event.queryStringParameters.data;
+  // 1) data 파라미터 하나로 읽어오기 (URL-encoded JSON)
+  const raw = event.queryStringParameters?.data;
   if (!raw) {
     return { statusCode: 400, body: "Missing data param" };
   }
 
-  // 2) decodeURIComponent → JSON.parse
+  // 2) 디코딩 → JSON.parse
   let payload;
   try {
     payload = JSON.parse(decodeURIComponent(raw));
@@ -15,23 +15,28 @@ export async function handler(event) {
     return { statusCode: 400, body: "Invalid data JSON" };
   }
 
-  // 3) client_id가 비어 있으면 생성
-  const effectiveClientId = payload.client_id || crypto.randomUUID();
-  payload.client_id = effectiveClientId;
+  // 3) client_id가 비어 있으면 생성 (고유 사용자 식별)
+  const clientId = payload.client_id || crypto.randomUUID();
+  payload.client_id = clientId;
 
-  // 4) MP collect용 올바른 URL (한 줄, 공백·줄바꿈 금지)
-  const url =
+  // 4) session_id가 비어 있으면 생성 (세션 식별)
+  if (!payload.session_id) {
+    payload.session_id = crypto.randomUUID();
+  }
+
+  // 5) GA4 MP collect 엔드포인트 (공백·줄바꿈 금지)
+  const endpoint =
     "https://www.google-analytics.com/mp/collect" +
     "?measurement_id=G-LKLBT4Z5XG" +
     "&api_secret=6wzs8wmxRtKdQznxUvY4Fg";
 
-  // 5) 이 url 변수를 실제로 사용
-  const resp = await fetch(url, {
+  // 6) POST 요청으로 payload 전송 (Netlify 함수 환경에서 글로벌 fetch 사용)
+  const resp = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
-  // 6) Netlify 함수는 204를 반환
-  return { statusCode: resp.status };
+  // 7) 원격 요청 성공 여부에 따라 204 또는 오류 반환
+  return { statusCode: resp.ok ? 204 : resp.status };
 }
